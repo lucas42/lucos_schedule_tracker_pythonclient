@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lucos_schedule_tracker_pythonclient"
+version = "0.0.0-managed"
+description = "Python library for sending updates to lucos_schedule_tracker"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3"
+]
+dependencies = [
+  "requests>=2.28"
+]
