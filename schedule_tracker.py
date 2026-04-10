@@ -24,7 +24,7 @@ def updateScheduleTracker(success: bool, system: str = SYSTEM, message: str = No
 		"message": message,
 	}
 	try:
-		schedule_tracker_response = requests.post(SCHEDULE_TRACKER_ENDPOINT, json=payload, timeout=5)
+		schedule_tracker_response = requests.post(SCHEDULE_TRACKER_ENDPOINT, json=payload, timeout=30)
 		schedule_tracker_response.raise_for_status()
 	except Exception as error:
 		print("\033[91m [{}] ** Error calling schedule-tracker: {}\033[0m".format(datetime.now().isoformat(), error), flush=True)
