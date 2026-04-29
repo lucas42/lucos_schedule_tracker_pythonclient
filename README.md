@@ -50,7 +50,7 @@ This means you must pick `frequency` based on the **alert latency you want**, no
 | Hourly | 3 missed runs | `3600` | 3 hours |
 | Daily | 3 missed runs (default) | `86400` (default) | 3 days |
 | Weekly | 1 missed run + 2 days slack | `259200` (3 days) | 9 days |
-| Monthly | 1 missed run + ~10 days slack | `1036800` (12 days) | 36 days |
+| Monthly | 1 missed run + ~6 days slack | `1036800` (12 days) | 36 days |
 
 **For a weekly cron, the natural-looking value `frequency=604800` (7 days) gives a 21-day threshold** — almost certainly too lax to be useful. If you want an alert within a few days of a missed weekly run, pass `frequency=259200` (3 days), which gives a 9-day threshold.
 
