@@ -17,6 +17,20 @@ session.headers.update({
 })
 
 def updateScheduleTracker(success: bool, system: str = SYSTEM, message: str = None, frequency: int = (24 * 60 * 60)):
+	"""Report the outcome of a scheduled run to lucos_schedule_tracker.
+
+	Args:
+		success: Whether the job completed successfully.
+		system: Identifier of the calling system. Defaults to the SYSTEM env var.
+		message: Optional human-readable detail, typically used to describe a
+			failure.
+		frequency: How often this job is genuinely scheduled to run, in seconds.
+			Defaults to 86400 (24 hours). Pass your cron's actual interval —
+			schedule-tracker uses this to derive its alert threshold. Do not
+			adjust this value to manipulate the threshold; if the resulting
+			alert window is wrong for your job, raise it as a schedule-tracker
+			issue rather than passing a misleading value here.
+	"""
 	payload = {
 		"system": system,
 		"frequency": frequency,
