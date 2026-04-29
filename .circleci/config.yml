@@ -6,4 +6,7 @@ workflows:
   version: 2
   test-publish:
     jobs:
-      - lucos/release-pip
+      - lucos/release-pip:
+          filters:
+            branches:
+              only: main
