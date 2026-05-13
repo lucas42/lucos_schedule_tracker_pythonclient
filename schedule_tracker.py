@@ -11,8 +11,9 @@ try:
 except KeyError:
 	sys.exit("\033[91mSCHEDULE_TRACKER_ENDPOINT environment variable not set - needs to be the URL of a running lucos_schedule_tracker instance\033[0m")
 
-# Derive the v2 endpoint from the v1 endpoint by stripping the path suffix
-# and prepending the versioned path.
+# Derive the v2 endpoint base from the configured endpoint URL.
+# The env var conventionally points at the v1 path (/report-status);
+# strip that suffix if present so both old and new configs work.
 # e.g. https://host/report-status -> https://host/v2/report-status
 _base_url = SCHEDULE_TRACKER_ENDPOINT.rstrip('/')
 if _base_url.endswith('/report-status'):
@@ -25,18 +26,18 @@ session.headers.update({
 	"Content-Type": "application/json",
 })
 
-def updateScheduleTracker(success: bool, system: str = SYSTEM, job_name: Optional[str] = None, message: Optional[str] = None, frequency: int = (24 * 60 * 60)):
+def updateScheduleTracker(success: bool, system: str = SYSTEM, job_name: str = "", message: Optional[str] = None, frequency: int = (24 * 60 * 60)):
 	"""Report the outcome of a scheduled run to lucos_schedule_tracker.
+
+	Posts to the v2 /report-status endpoint.
 
 	Args:
 		success: Whether the job completed successfully.
-		system: Identifier of the calling system (the owning service, e.g.
-			"lucos_arachne"). Defaults to the SYSTEM env var.
-		job_name: Optional sub-job identifier (e.g. "ingestor_dbpedia"). When
-			provided, the report is sent to the v2 endpoint so that multiple
-			distinct jobs within the same system can be tracked separately. When
-			omitted, the v1 endpoint is used for backwards compatibility. See
-			ADR-0004 for the architectural background:
+		system: Identifier of the owning system (e.g. "lucos_arachne"). Defaults
+			to the SYSTEM env var.
+		job_name: Sub-job identifier within the system (e.g.
+			"ingestor_dbpedia_meanOfTransportation"). Defaults to an empty string.
+			See ADR-0004 for the architectural background:
 			https://github.com/lucas42/lucos/blob/main/docs/adr/0004-scheduled-jobs-monitoring-architecture.md
 		message: Optional human-readable detail, typically used to describe a
 			failure.
@@ -47,25 +48,15 @@ def updateScheduleTracker(success: bool, system: str = SYSTEM, job_name: Optiona
 			alert window is wrong for your job, raise it as a schedule-tracker
 			issue rather than passing a misleading value here.
 	"""
-	if job_name is not None:
-		endpoint = _V2_ENDPOINT
-		payload = {
-			"system": system,
-			"job_name": job_name,
-			"frequency": frequency,
-			"status": "success" if success else "error",
-			"message": message,
-		}
-	else:
-		endpoint = SCHEDULE_TRACKER_ENDPOINT
-		payload = {
-			"system": system,
-			"frequency": frequency,
-			"status": "success" if success else "error",
-			"message": message,
-		}
+	payload = {
+		"system": system,
+		"job_name": job_name,
+		"frequency": frequency,
+		"status": "success" if success else "error",
+		"message": message,
+	}
 	try:
-		schedule_tracker_response = requests.post(endpoint, json=payload, timeout=30)
+		schedule_tracker_response = requests.post(_V2_ENDPOINT, json=payload, timeout=30)
 		schedule_tracker_response.raise_for_status()
 	except Exception as error:
 		print("\033[91m [{}] ** Error calling schedule-tracker: {}\033[0m".format(datetime.now().isoformat(), error), flush=True)

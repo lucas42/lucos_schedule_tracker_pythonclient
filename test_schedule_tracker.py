@@ -9,7 +9,6 @@ os.environ.setdefault("SCHEDULE_TRACKER_ENDPOINT", "https://schedule-tracker.exa
 
 import schedule_tracker
 
-V1_ENDPOINT = "https://schedule-tracker.example.com/report-status"
 V2_ENDPOINT = "https://schedule-tracker.example.com/v2/report-status"
 
 # The SYSTEM constant is read from the environment at import time; use the
@@ -18,76 +17,11 @@ V2_ENDPOINT = "https://schedule-tracker.example.com/v2/report-status"
 SYSTEM = schedule_tracker.SYSTEM
 
 
-class TestUpdateScheduleTrackerV1(unittest.TestCase):
-	"""Tests for the v1 code path — no job_name provided."""
+class TestUpdateScheduleTrackerSuccess(unittest.TestCase):
+	"""Tests for successful calls posting to the v2 endpoint."""
 
 	@patch("requests.post")
-	def test_success_posts_to_v1_endpoint(self, mock_post):
-		mock_post.return_value = MagicMock()
-		schedule_tracker.updateScheduleTracker(success=True)
-		mock_post.assert_called_once_with(
-			V1_ENDPOINT,
-			json={
-				"system": SYSTEM,
-				"frequency": 86400,
-				"status": "success",
-				"message": None,
-			},
-			timeout=30,
-		)
-
-	@patch("requests.post")
-	def test_failure_with_message_posts_to_v1_endpoint(self, mock_post):
-		mock_post.return_value = MagicMock()
-		schedule_tracker.updateScheduleTracker(success=False, message="Database connection failed")
-		mock_post.assert_called_once_with(
-			V1_ENDPOINT,
-			json={
-				"system": SYSTEM,
-				"frequency": 86400,
-				"status": "error",
-				"message": "Database connection failed",
-			},
-			timeout=30,
-		)
-
-	@patch("requests.post")
-	def test_explicit_job_name_none_uses_v1_endpoint(self, mock_post):
-		"""Explicitly passing job_name=None must still use the v1 endpoint."""
-		mock_post.return_value = MagicMock()
-		schedule_tracker.updateScheduleTracker(success=True, job_name=None)
-		mock_post.assert_called_once_with(
-			V1_ENDPOINT,
-			json={
-				"system": SYSTEM,
-				"frequency": 86400,
-				"status": "success",
-				"message": None,
-			},
-			timeout=30,
-		)
-
-	@patch("requests.post")
-	def test_custom_frequency_posts_to_v1_endpoint(self, mock_post):
-		mock_post.return_value = MagicMock()
-		schedule_tracker.updateScheduleTracker(success=True, frequency=3600)
-		mock_post.assert_called_once_with(
-			V1_ENDPOINT,
-			json={
-				"system": SYSTEM,
-				"frequency": 3600,
-				"status": "success",
-				"message": None,
-			},
-			timeout=30,
-		)
-
-
-class TestUpdateScheduleTrackerV2(unittest.TestCase):
-	"""Tests for the v2 code path — job_name provided."""
-
-	@patch("requests.post")
-	def test_success_with_job_name_posts_to_v2_endpoint(self, mock_post):
+	def test_success_posts_to_v2_endpoint(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(success=True, job_name="ingestor_dbpedia")
 		mock_post.assert_called_once_with(
@@ -103,7 +37,7 @@ class TestUpdateScheduleTrackerV2(unittest.TestCase):
 		)
 
 	@patch("requests.post")
-	def test_failure_with_job_name_and_message_posts_to_v2_endpoint(self, mock_post):
+	def test_failure_with_message_posts_to_v2_endpoint(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(
 			success=False,
@@ -123,7 +57,24 @@ class TestUpdateScheduleTrackerV2(unittest.TestCase):
 		)
 
 	@patch("requests.post")
-	def test_custom_system_and_frequency_with_job_name(self, mock_post):
+	def test_default_job_name_is_empty_string(self, mock_post):
+		"""Omitting job_name sends an empty string, not None."""
+		mock_post.return_value = MagicMock()
+		schedule_tracker.updateScheduleTracker(success=True)
+		mock_post.assert_called_once_with(
+			V2_ENDPOINT,
+			json={
+				"system": SYSTEM,
+				"job_name": "",
+				"frequency": 86400,
+				"status": "success",
+				"message": None,
+			},
+			timeout=30,
+		)
+
+	@patch("requests.post")
+	def test_custom_system_and_frequency(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(
 			success=True,
@@ -145,17 +96,15 @@ class TestUpdateScheduleTrackerV2(unittest.TestCase):
 
 
 class TestErrorHandling(unittest.TestCase):
-	"""Error handling applies to both code paths."""
+	"""Network errors are caught and printed, never raised."""
 
 	@patch("requests.post", side_effect=Exception("Connection refused"))
-	def test_v1_network_error_is_caught_not_raised(self, _mock_post):
-		"""Network errors on the v1 path must be swallowed (not raised)."""
-		schedule_tracker.updateScheduleTracker(success=True)
-
-	@patch("requests.post", side_effect=Exception("Connection refused"))
-	def test_v2_network_error_is_caught_not_raised(self, _mock_post):
-		"""Network errors on the v2 path must be swallowed (not raised)."""
+	def test_network_error_is_caught_not_raised(self, _mock_post):
 		schedule_tracker.updateScheduleTracker(success=True, job_name="some_job")
+
+	@patch("requests.post", side_effect=Exception("Connection refused"))
+	def test_network_error_with_no_job_name_is_caught_not_raised(self, _mock_post):
+		schedule_tracker.updateScheduleTracker(success=True)
 
 
 if __name__ == "__main__":
