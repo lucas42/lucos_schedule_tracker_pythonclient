@@ -10,7 +10,7 @@ jobs:
       - checkout
       - run:
           name: Install dependencies
-          command: pip install -e . pytest
+          command: pip install requests pytest
       - run:
           name: Run tests
           command: pytest

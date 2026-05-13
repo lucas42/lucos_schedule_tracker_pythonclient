@@ -28,7 +28,7 @@ updateScheduleTracker(success=False, job_name="ingestor_loc", message="Connectio
 
 ## API Reference
 
-### `updateScheduleTracker(success, system, job_name, message, frequency)`
+### `updateScheduleTracker(success: bool, system: str = SYSTEM, job_name: str | None = None, message: str | None = None, frequency: int = 86400)`
 
 Sends a status update to the schedule tracker.
 
