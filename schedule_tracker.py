@@ -26,19 +26,21 @@ session.headers.update({
 	"Content-Type": "application/json",
 })
 
-def updateScheduleTracker(success: bool, system: str = SYSTEM, job_name: str = "", message: Optional[str] = None, frequency: int = (24 * 60 * 60)):
+def updateScheduleTracker(success: bool, job_name: str, system: str = SYSTEM, message: Optional[str] = None, frequency: int = (24 * 60 * 60)):
 	"""Report the outcome of a scheduled run to lucos_schedule_tracker.
 
 	Posts to the v2 /report-status endpoint.
 
 	Args:
 		success: Whether the job completed successfully.
+		job_name: Sub-job identifier within the system (e.g.
+			"ingestor_dbpedia_meanOfTransportation"). Required — naming the job
+			explicitly makes it easier to add further jobs to the same system
+			later without schema changes. See ADR-0004 for the architectural
+			background:
+			https://github.com/lucas42/lucos/blob/main/docs/adr/0004-scheduled-jobs-monitoring-architecture.md
 		system: Identifier of the owning system (e.g. "lucos_arachne"). Defaults
 			to the SYSTEM env var.
-		job_name: Sub-job identifier within the system (e.g.
-			"ingestor_dbpedia_meanOfTransportation"). Defaults to an empty string.
-			See ADR-0004 for the architectural background:
-			https://github.com/lucas42/lucos/blob/main/docs/adr/0004-scheduled-jobs-monitoring-architecture.md
 		message: Optional human-readable detail, typically used to describe a
 			failure.
 		frequency: How often this job is genuinely scheduled to run, in seconds.

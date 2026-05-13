@@ -17,13 +17,13 @@ V2_ENDPOINT = "https://schedule-tracker.example.com/v2/report-status"
 SYSTEM = schedule_tracker.SYSTEM
 
 
-class TestUpdateScheduleTrackerSuccess(unittest.TestCase):
-	"""Tests for successful calls posting to the v2 endpoint."""
+class TestUpdateScheduleTracker(unittest.TestCase):
+	"""Tests for updateScheduleTracker posting to the v2 endpoint."""
 
 	@patch("requests.post")
 	def test_success_posts_to_v2_endpoint(self, mock_post):
 		mock_post.return_value = MagicMock()
-		schedule_tracker.updateScheduleTracker(success=True, job_name="ingestor_dbpedia")
+		schedule_tracker.updateScheduleTracker(True, "ingestor_dbpedia")
 		mock_post.assert_called_once_with(
 			V2_ENDPOINT,
 			json={
@@ -37,11 +37,11 @@ class TestUpdateScheduleTrackerSuccess(unittest.TestCase):
 		)
 
 	@patch("requests.post")
-	def test_failure_with_message_posts_to_v2_endpoint(self, mock_post):
+	def test_failure_with_message(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(
-			success=False,
-			job_name="ingestor_loc",
+			False,
+			"ingestor_loc",
 			message="Connection timeout",
 		)
 		mock_post.assert_called_once_with(
@@ -57,29 +57,12 @@ class TestUpdateScheduleTrackerSuccess(unittest.TestCase):
 		)
 
 	@patch("requests.post")
-	def test_default_job_name_is_empty_string(self, mock_post):
-		"""Omitting job_name sends an empty string, not None."""
-		mock_post.return_value = MagicMock()
-		schedule_tracker.updateScheduleTracker(success=True)
-		mock_post.assert_called_once_with(
-			V2_ENDPOINT,
-			json={
-				"system": SYSTEM,
-				"job_name": "",
-				"frequency": 86400,
-				"status": "success",
-				"message": None,
-			},
-			timeout=30,
-		)
-
-	@patch("requests.post")
 	def test_custom_system_and_frequency(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(
-			success=True,
+			True,
+			"ingestor_wikidata",
 			system="lucos_arachne",
-			job_name="ingestor_wikidata",
 			frequency=3600,
 		)
 		mock_post.assert_called_once_with(
@@ -94,17 +77,19 @@ class TestUpdateScheduleTrackerSuccess(unittest.TestCase):
 			timeout=30,
 		)
 
+	@patch("requests.post")
+	def test_job_name_is_required(self, mock_post):
+		"""Calling without job_name must raise TypeError."""
+		with self.assertRaises(TypeError):
+			schedule_tracker.updateScheduleTracker(True)
+
 
 class TestErrorHandling(unittest.TestCase):
 	"""Network errors are caught and printed, never raised."""
 
 	@patch("requests.post", side_effect=Exception("Connection refused"))
 	def test_network_error_is_caught_not_raised(self, _mock_post):
-		schedule_tracker.updateScheduleTracker(success=True, job_name="some_job")
-
-	@patch("requests.post", side_effect=Exception("Connection refused"))
-	def test_network_error_with_no_job_name_is_caught_not_raised(self, _mock_post):
-		schedule_tracker.updateScheduleTracker(success=True)
+		schedule_tracker.updateScheduleTracker(True, "some_job")
 
 
 if __name__ == "__main__":

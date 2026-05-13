@@ -17,20 +17,20 @@ The following environment variables must be set for the library to function:
 from schedule_tracker import updateScheduleTracker
 
 # Report a successful run
-updateScheduleTracker(success=True, job_name="ingestor_dbpedia")
+updateScheduleTracker(True, "ingestor_dbpedia")
 
 # Report a failure with a message
-updateScheduleTracker(success=False, job_name="ingestor_loc", message="Database connection failed")
+updateScheduleTracker(False, "ingestor_loc", message="Database connection failed")
 ```
 
 ## API Reference
 
-### `updateScheduleTracker(success: bool, system: str = SYSTEM, job_name: str = "", message: str | None = None, frequency: int = 86400)`
+### `updateScheduleTracker(success: bool, job_name: str, system: str = SYSTEM, message: str | None = None, frequency: int = 86400)`
 
 Sends a status update to the v2 schedule tracker endpoint.
 
 *   **`success`** (*bool*, required): Whether the job completed successfully.
+*   **`job_name`** (*str*, required): A sub-job identifier within the system (e.g. `"ingestor_dbpedia_meanOfTransportation"`). Naming the job explicitly makes it easier to add further jobs to the same system later without schema changes.
 *   **`system`** (*str*, optional): The identifier for the owning system (e.g. `"lucos_arachne"`). Defaults to the value of the `SYSTEM` environment variable.
-*   **`job_name`** (*str*, optional): A sub-job identifier within the system (e.g. `"ingestor_dbpedia_meanOfTransportation"`). Defaults to an empty string.
 *   **`message`** (*str | None*, optional): A human-readable message, typically used to provide details on failure.
 *   **`frequency`** (*int*, optional): How often the job is expected to run, in seconds. Defaults to `86400` (24 hours).
