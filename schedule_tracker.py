@@ -14,8 +14,6 @@ except KeyError:
 if "/v2/" not in SCHEDULE_TRACKER_ENDPOINT:
 	sys.exit("\033[91mSCHEDULE_TRACKER_ENDPOINT must point at the v2 endpoint (e.g. http://host/v2/report-status) — got: {}\033[0m".format(SCHEDULE_TRACKER_ENDPOINT))
 
-_V2_ENDPOINT = SCHEDULE_TRACKER_ENDPOINT
-
 session = requests.Session()
 session.headers.update({
 	"User-Agent": SYSTEM,
@@ -54,7 +52,7 @@ def updateScheduleTracker(success: bool, job_name: str, system: str = SYSTEM, me
 		"message": message,
 	}
 	try:
-		schedule_tracker_response = requests.post(_V2_ENDPOINT, json=payload, timeout=30)
+		schedule_tracker_response = requests.post(SCHEDULE_TRACKER_ENDPOINT, json=payload, timeout=30)
 		schedule_tracker_response.raise_for_status()
 	except Exception as error:
 		print("\033[91m [{}] ** Error calling schedule-tracker: {}\033[0m".format(datetime.now().isoformat(), error), flush=True)
