@@ -1,11 +1,13 @@
 import os
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch, MagicMock
 
 # Set required environment variables before importing the module, which reads
-# them at import time.
+# them at import time.  The endpoint must already be the v2 URL.
 os.environ.setdefault("SYSTEM", "test_system")
-os.environ.setdefault("SCHEDULE_TRACKER_ENDPOINT", "https://schedule-tracker.example.com/report-status")
+os.environ.setdefault("SCHEDULE_TRACKER_ENDPOINT", "https://schedule-tracker.example.com/v2/report-status")
 
 import schedule_tracker
 
@@ -90,6 +92,34 @@ class TestErrorHandling(unittest.TestCase):
 	@patch("requests.post", side_effect=Exception("Connection refused"))
 	def test_network_error_is_caught_not_raised(self, _mock_post):
 		schedule_tracker.updateScheduleTracker(True, "some_job")
+
+
+class TestStartupValidation(unittest.TestCase):
+	"""Startup env-var validation exits with a clear error for bad config."""
+
+	def _run_import(self, endpoint):
+		"""Run a fresh Python process that imports schedule_tracker with the given endpoint."""
+		return subprocess.run(
+			[
+				sys.executable, "-c",
+				"import os; os.environ['SYSTEM']='s'; "
+				"os.environ['SCHEDULE_TRACKER_ENDPOINT']={}; "
+				"import schedule_tracker".format(repr(endpoint)),
+			],
+			capture_output=True,
+			text=True,
+		)
+
+	def test_v1_url_exits_with_error(self):
+		"""A v1-format URL (no /v2/) must cause a non-zero exit."""
+		result = self._run_import("http://host/report-status")
+		self.assertNotEqual(result.returncode, 0)
+		self.assertIn("/v2/", result.stderr)
+
+	def test_v2_url_imports_successfully(self):
+		"""A URL already containing /v2/ must not cause an exit."""
+		result = self._run_import("http://host/v2/report-status")
+		self.assertEqual(result.returncode, 0)
 
 
 if __name__ == "__main__":

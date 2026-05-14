@@ -9,16 +9,12 @@ except KeyError:
 try:
 	SCHEDULE_TRACKER_ENDPOINT = os.environ["SCHEDULE_TRACKER_ENDPOINT"]
 except KeyError:
-	sys.exit("\033[91mSCHEDULE_TRACKER_ENDPOINT environment variable not set - needs to be the URL of a running lucos_schedule_tracker instance\033[0m")
+	sys.exit("\033[91mSCHEDULE_TRACKER_ENDPOINT environment variable not set - must be the v2 endpoint URL of a running lucos_schedule_tracker instance (e.g. http://host/v2/report-status)\033[0m")
 
-# Derive the v2 endpoint base from the configured endpoint URL.
-# The env var conventionally points at the v1 path (/report-status);
-# strip that suffix if present so both old and new configs work.
-# e.g. https://host/report-status -> https://host/v2/report-status
-_base_url = SCHEDULE_TRACKER_ENDPOINT.rstrip('/')
-if _base_url.endswith('/report-status'):
-	_base_url = _base_url[:-len('/report-status')]
-_V2_ENDPOINT = _base_url + '/v2/report-status'
+if "/v2/" not in SCHEDULE_TRACKER_ENDPOINT:
+	sys.exit("\033[91mSCHEDULE_TRACKER_ENDPOINT must point at the v2 endpoint (e.g. http://host/v2/report-status) — got: {}\033[0m".format(SCHEDULE_TRACKER_ENDPOINT))
+
+_V2_ENDPOINT = SCHEDULE_TRACKER_ENDPOINT
 
 session = requests.Session()
 session.headers.update({
