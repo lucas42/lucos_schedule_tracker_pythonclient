@@ -9,7 +9,7 @@ This library posts to the v2 `/report-status` endpoint. See [ADR-0004](https://g
 The following environment variables must be set for the library to function:
 
 *   **`SYSTEM`**: A unique identifier for the system being tracked. This is used as the `User-Agent` header and as the default `system` name in reports.
-*   **`SCHEDULE_TRACKER_ENDPOINT`**: The URL of the `lucos_schedule_tracker` instance's report endpoint (e.g., `https://schedule-tracker.example.com/report-status`). The library derives the v2 endpoint URL from this value automatically.
+*   **`SCHEDULE_TRACKER_ENDPOINT`**: The v2 report endpoint URL of the `lucos_schedule_tracker` instance (e.g., `https://schedule-tracker.example.com/v2/report-status`). The URL must contain `/v2/` — the library validates this at startup and exits with an error if it does not.
 
 ## Usage
 
