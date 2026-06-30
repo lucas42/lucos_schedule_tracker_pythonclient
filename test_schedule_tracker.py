@@ -22,7 +22,7 @@ SYSTEM = schedule_tracker.SYSTEM
 class TestUpdateScheduleTracker(unittest.TestCase):
 	"""Tests for updateScheduleTracker posting to the v2 endpoint."""
 
-	@patch("requests.post")
+	@patch.object(schedule_tracker.session, "post")
 	def test_success_posts_to_v2_endpoint(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(True, "ingestor_dbpedia")
@@ -38,7 +38,7 @@ class TestUpdateScheduleTracker(unittest.TestCase):
 			timeout=30,
 		)
 
-	@patch("requests.post")
+	@patch.object(schedule_tracker.session, "post")
 	def test_failure_with_message(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(
@@ -58,7 +58,7 @@ class TestUpdateScheduleTracker(unittest.TestCase):
 			timeout=30,
 		)
 
-	@patch("requests.post")
+	@patch.object(schedule_tracker.session, "post")
 	def test_custom_system_and_frequency(self, mock_post):
 		mock_post.return_value = MagicMock()
 		schedule_tracker.updateScheduleTracker(
@@ -79,17 +79,32 @@ class TestUpdateScheduleTracker(unittest.TestCase):
 			timeout=30,
 		)
 
-	@patch("requests.post")
+	@patch.object(schedule_tracker.session, "post")
 	def test_job_name_is_required(self, mock_post):
 		"""Calling without job_name must raise TypeError."""
 		with self.assertRaises(TypeError):
 			schedule_tracker.updateScheduleTracker(True)
 
+	def test_session_carries_conforming_user_agent(self):
+		"""The report-status call goes via the configured session, so its
+		User-Agent header must be SYSTEM (per ADR-0001), not the requests
+		library default. This is the regression guard for the bug where line
+		55 used requests.post() and bypassed the session entirely."""
+		self.assertEqual(schedule_tracker.session.headers["User-Agent"], SYSTEM)
+
+	@patch.object(schedule_tracker.session, "post")
+	def test_post_goes_through_configured_session(self, mock_post):
+		"""Patching the session's post (not requests.post) and seeing it called
+		proves the call actually uses the session — and therefore its UA."""
+		mock_post.return_value = MagicMock()
+		schedule_tracker.updateScheduleTracker(True, "ingestor_dbpedia")
+		mock_post.assert_called_once()
+
 
 class TestErrorHandling(unittest.TestCase):
 	"""Network errors are caught and printed, never raised."""
 
-	@patch("requests.post", side_effect=Exception("Connection refused"))
+	@patch.object(schedule_tracker.session, "post", side_effect=Exception("Connection refused"))
 	def test_network_error_is_caught_not_raised(self, _mock_post):
 		schedule_tracker.updateScheduleTracker(True, "some_job")
 
